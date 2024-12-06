@@ -13,6 +13,7 @@ mod d1;
 mod d2;
 mod d3;
 mod d4;
+mod d5;
 
 mod prelude {
     pub use crate::*;
@@ -50,6 +51,9 @@ pub trait MoreIterTools: Iterator {
         FromA: Default + Extend<A>,
         FromB: Default + Extend<B>,
         Self: Sized + Iterator<Item = Result<(A, B), Error>>;
+    fn try_fold<Acc, E, F>(self, init: Acc, f: F) -> Result<Acc, E>
+    where
+        F: FnMut(Acc, Self::Item) -> Result<Acc, E>;
     fn sum_ok(self) -> Self::Item
     where
         Self::Item: Try + FromResidual,
@@ -81,6 +85,16 @@ impl<T: Iterator> MoreIterTools for T {
             }
         }
         Ok((a, b))
+    }
+    fn try_fold<Acc, E, F>(self, init: Acc, mut f: F) -> Result<Acc, E>
+    where
+        F: FnMut(Acc, Self::Item) -> Result<Acc, E>,
+    {
+        let mut acc = init;
+        for x in self {
+            acc = f(acc, x)?;
+        }
+        Ok(acc)
     }
     fn sum_ok(self) -> Self::Item
     where
